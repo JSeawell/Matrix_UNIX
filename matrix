@@ -1,0 +1,362 @@
+#!/bin/bash
+
+#Program 1 Matrix script
+
+#Name: Jake Seawell
+#Date: 7/7/19
+#CS-344 - Program 1
+#Description: This is a bash script that performs the following functions, 
+#which are used on matrices: dims, transpose, mean, add, multiply.
+#Matrices need to be integers, separated by tabs. 
+
+#trap signals to call cleanup
+trap cleanup 0 1 2 3 6 15
+
+#cleans up all temp files in current directory
+cleanup()
+{
+	rm -rf ./temp*
+}
+
+
+# *************  DIMS  ****************
+	
+#This function takes a matrix file or stdin as an argument
+#and returns the dimentions of the matrix as "rows columns"
+
+dims()
+{
+	#if too many arguments
+	if [ $# -gt 1 ]
+	then
+		echo "Too many arguments given to dims function." >&2
+		exit 1
+	#if correct # of arguments
+	else
+		#if file exists
+		if [ -f $1 ]
+		then
+			#put (get if not given as argument) input into temporary file
+			cat $1 >>tempfile
+
+			#go through each row in file
+			row=0
+			while read currentLine
+			do
+				column=0
+				row=`expr $row + 1`
+
+				#go through each item/column
+				for i in $currentLine
+				do
+					column=`expr $column + 1`
+				done
+			done < tempfile
+
+			#display "row column"
+			echo "$row $column"
+
+			#clean up temp file used
+			rm tempfile
+
+		#if file does not exist
+		else
+			echo "$1 is not an existing file. Try again." >&2
+			exit 2
+		fi
+	fi
+}
+
+
+# *************  TRANSPOSE  ****************
+
+# This function takes a matrix file or stdin
+# and transposes it by converting rows to columns
+# and columns to rows
+
+transpose()
+{
+	#if too many arguments
+	if [ $# -gt 1 ]
+	then
+		echo "Too many arguments given to transpose function." >&2
+		exit 1
+	#if correct # of arguments
+	else
+		#if file is readable
+		if [ -r $1 ]
+		then
+			tempfile="tempfile"
+			tempCol="tempcolfile"
+
+			# Put input into temp file
+			cat $1 >>$tempfile
+
+			# For each row in matrix file
+			while read currentLine
+			do
+				#count number of columns
+				numCols=0
+				for i in $currentLine
+				do
+					numCols=`expr $numCols + 1`
+				done
+			done < $tempfile
+
+			#for each column
+			for ((i=1; i<$numCols+1; i++))
+			do
+				#take the current row and past into
+				#new matrix as a column
+				cut -f"$i" $tempfile | paste -s >> $tempCol
+			done
+
+			#display transposed matrix
+			cat $tempCol
+
+			#clean-up temp files
+			rm $tempCol
+			rm $tempfile
+		
+		#file is not readable
+		else
+			echo "Error in transpose. $1 is not a readable file. Try again." >&2
+			exit 2
+		fi
+	fi
+}
+
+
+# *************  MEAN  ****************
+
+#This function takes a matrix file or stdin
+#and calculates the mean value of each column,
+#resulting in a row vecor of all the mean values
+
+mean()
+{
+	#if too many arguments
+	if [ $# -gt 1 ]
+	then
+		echo "Too many arguments given to mean function." >&2
+		exit 1
+	
+	#if correct # of arguments
+	else
+		#transpose matrix to calc mean of
+		#rows instead of columns
+		transpose $1 > tempFile1
+		touch tempFile2
+		row=0
+
+		#for each row
+		while read currentLine
+		do
+    			column=0
+    			sum=0
+			average=0
+    			row=`expr $row + 1`
+
+			#count number of columns
+			#& add value to row sum
+    			for i in $currentLine
+    			do
+        			num=$i
+        			column=`expr $column + 1`
+        			sum=`expr $sum + $num`
+    			done
+
+			#calc avg using given rounded avg algorithm`
+			average=$(( ($sum + ($column / 2)*( ($sum > 0)*2 - 1 )) / $column ))
+			#append avg to temp file as column
+    			echo "$average" >> tempFile2
+		done < tempFile1
+
+		#transpose column array of averages into row
+		transpose tempFile2 >tempFile3
+
+		#display avgs
+		cat tempFile3
+
+		#clean-up all tempfiles
+		rm tempFile[1-3]
+	fi
+}
+
+
+# *************  ADD  ****************
+
+#This function takes two matrix files as arguments
+#and adds their values together to output a new
+#matrix. Both input matrices need to be same size.
+
+add()
+{
+	#if wrong # of arguments
+	if [ $# -ne 2 ]
+	then
+		echo "Add function needs exactly 2 arguments." >&2
+		exit 1
+	
+	#if correct # of arguments
+	else
+		#get dims of both input files to check size
+		dims $1 > tempsize1
+		dims $2 > tempsize2
+
+		#if dims are equal
+		if (cmp -s tempsize1 tempsize2)
+		then
+			#make 2 arrays
+			declare -a array1
+			declare -a array2
+
+			#add matrices
+			while read currentLine1 <&3 && read currentLine2 <&4
+			do
+     				j=0
+				#put current line of matrix 1 in array 1
+				for i in $currentLine1
+				do
+					array1[$j]=$i
+					j=`expr $j + 1`
+				done
+
+				k=0
+				#put current line of matrix 2 in array 2
+				for i in $currentLine2
+				do
+					array2[$k]=$i
+					k=`expr $k + 1`
+				done
+
+				#iterate through both arrays and add their value,
+				#appending that value to a new array
+				l=0
+				for i in ${array1[@]}
+				do
+					echo -ne "`expr ${array1[$l]} + ${array2[$l]}`\t" >>newMatrix
+					l=`expr $l + 1`
+				done
+			
+				#end of row, append newLine
+				truncate -s-1 newMatrix
+				echo >>newMatrix
+			done 3<"$1" 4<"$2"
+
+			#display new matrix
+			cat newMatrix
+			#cleanup temp newMatrix file
+			rm newMatrix
+		
+		#if matrices are not the sme size
+		else
+			#error
+			echo "Error. Matrices need to be the same size in add function." >&2
+			rm tempsize[1-2]
+			exit 2
+		fi
+
+		#cleanup temp dims files
+		rm tempsize[1-2]
+	fi
+}
+
+
+# *************  MULTIPLY  ****************
+
+#This function takes two matrix files as arguments.
+#Input matrix 1&2 must be in the format AxN and NxB,
+#and this function will output the multiplied matrix,
+#of size AxB.
+
+multiply()
+{
+	if [ $# -ne 2 ]
+	then
+		echo "Multiply function needs exactly 2 arguments." >&2
+		exit 1
+	else	
+		#make 2 arrays
+		declare -a array1
+		declare -a array2
+	
+		cat $1 >tempfile1
+		#transpose matrix 2
+		transpose $2 >tempfile2
+		
+		dims tempfile1 >tempsize1
+		dims tempfile2 >tempsize2
+
+		cut -d " " -f 2 tempsize1 >tempsize3
+		cut -d " " -f 2 tempsize2 >tempsize4
+
+		#if rows of m1 = cols of m2
+		if (cmp -s tempsize3 tempsize4)
+		then
+			#get current line of matrix 1
+			while read currentLine1 <&3
+			do	
+				j=0
+				#put current line of matrix 1 in array 1
+				for i in $currentLine1
+				do
+					array1[$j]=$i
+					j=`expr $j + 1`
+				done
+
+				#get current line of matrix 2
+				while read currentLine2 <&4
+				do
+					k=0
+					#put current line of matrix 2 in array 2
+					for i in $currentLine2
+					do
+						array2[$k]=$i
+						k=`expr $k + 1`
+					done
+
+					#iterate through both arrays 
+					#and multiply their value,
+					#sum all those values, and append 
+					#that sum to a new array
+					l=0
+					sum=0
+					num=0
+					for i in ${array1[@]}
+					do
+						num=$(( array1[$l] * array2[$l] )) 
+						sum=`expr $sum + $num`
+						l=`expr $l + 1`
+					done
+
+					echo -ne "$sum\t" >>newMatrix
+					#go to next line of matrix 2
+				done 4<"tempfile2"
+		
+				#end of row, append new line
+				truncate -s-1 newMatrix
+				echo >>newMatrix
+				#go to next line of matrix 1
+			done 3<"tempfile1"
+
+			#display new matrix
+			cat newMatrix
+			#cleanup temp newMatrix file
+			rm newMatrix
+	
+		else
+			echo "Error. Matrices need to match the format [AxN] * [N*B] in multiply function." >&2
+			rm tempfile[1-2]
+			rm tempsize[1-4]
+			exit 2
+		fi
+
+		#cleanup temp files
+		rm tempfile[1-2]
+		rm tempsize[1-4]
+	fi
+}
+
+# Call functions above by typing "matrix" then "function_name" then "arguments"
+$1 "${@:2}"
