@@ -4,11 +4,11 @@
 
 A series of matrix operations written in UNIX
 
-## How to compile:
+## How to compile and run:
 > khdkhf
-
-## How to run:
-> kdjfkdfh
 
 ## What I learned:
 > kjfkdhf
+
+## Example run:
+>
