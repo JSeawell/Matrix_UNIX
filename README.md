@@ -1,4 +1,4 @@
-# Matrix UNIX
+# Matrix Ops (UNIX)
 
 > CS-344 (Operating Systems I) Program
 
