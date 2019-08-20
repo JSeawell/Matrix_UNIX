@@ -22,13 +22,13 @@ A series of matrix operations written in UNIX.
 
 ## Example run:
 > `$ cat m1`  
-> 1	2	3	4  
-> 5	6	7	8  
+> 1   2	  3	  4  
+> 5	  6 	7	  8  
 > `$ cat m2`  
-> 1	2  
-> 3	4  
-> 5	6  
-> 7	8  
+> 1 	2  
+> 3	  4  
+> 5 	6  
+> 7 	8  
 > `$ matrix dims m1`  
 > 2 4  
 > `$ cat m2 | matrix dims`  
@@ -41,7 +41,7 @@ A series of matrix operations written in UNIX.
 > 6	8  
 > 10	12  
 > 14	16  
-? `$ matrix mean m1`  
+> `$ matrix mean m1`  
 > 3	4	5	6  
 > `$ matrix transpose m1`  
 > 1	5  
