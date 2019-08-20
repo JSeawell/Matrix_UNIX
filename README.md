@@ -52,7 +52,7 @@ A series of matrix operations written in UNIX.
 > 50	  60  
 > 114	  140  
 
-## Concepts learned/used:
+## Tech and/or concepts learned/used:
 > - UNIX shells  
 > - UNIX commands
 > - Input/output redirecton
