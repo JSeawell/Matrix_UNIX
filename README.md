@@ -53,6 +53,7 @@ A series of matrix operations written in UNIX.
 > 114	  140  
 
 ## Tech and/or concepts learned/used:
+> - Bash
 > - UNIX shells  
 > - UNIX commands
 > - Input/output redirecton
